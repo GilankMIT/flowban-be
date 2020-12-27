@@ -16,8 +16,57 @@ func NewScrumProjectRepositoryUseCase(scrumProjectRepo scrumProject.ScrumProject
 	return &scrumProjectUseCase{scrumProjectRepo: scrumProjectRepo}
 }
 
+func (u scrumProjectUseCase) GetProjectBoards(projectID int) (data *[]model.ScrumKanban, err error) {
+	return u.scrumProjectRepo.GetBoardByProjectID(projectID)
+}
+
+func (u scrumProjectUseCase) MoveIssueToBacklog(issueID int) (*model.SprintIssue, error) {
+	issue, err := u.scrumProjectRepo.GetIssueByID(issueID)
+	if err != nil {
+		return nil, err
+	}
+	issue.ScrumKanbanID = 0
+	return u.scrumProjectRepo.UpdateIssue(*issue)
+}
+
 func (u scrumProjectUseCase) GetByUserID(userID int) (data *[]model.ScrumProject, err error) {
 	return u.scrumProjectRepo.GetByUserID(userID)
+}
+
+func (u scrumProjectUseCase) MoveIssue(issueId int, boardID int) (*model.SprintIssue, error) {
+	//get issue by id
+	issueData, err := u.scrumProjectRepo.GetIssueByID(issueId)
+	if err != nil {
+		return nil, err
+	}
+
+	issueData.ScrumKanbanID = boardID
+
+	return u.scrumProjectRepo.UpdateIssue(*issueData)
+}
+
+func (u scrumProjectUseCase) MoveIssueFromBacklog(issueID int) (*model.SprintIssue, error) {
+	//get issue by id
+	issueData, err := u.scrumProjectRepo.GetIssueByID(issueID)
+	if err != nil {
+		return nil, err
+	}
+
+	//get project by ID
+	project, err := u.scrumProjectRepo.GetByID(issueData.ProjectID, false)
+	if err != nil {
+		return nil, err
+	}
+
+	//get board with name "To Do"
+	board, err := u.scrumProjectRepo.GetBoardByProjectIDAndBoardName(project.ID, "To Do")
+	if err != nil {
+		return nil, err
+	}
+
+	//update issue
+	issueData.ScrumKanbanID = board.ID
+	return u.scrumProjectRepo.UpdateIssue(*issueData)
 }
 
 func (u scrumProjectUseCase) AddNewSprint(sprintData scrumProjectDTO.ReqCreateNewSprint) (*model.SprintSession, error) {
@@ -103,6 +152,33 @@ func (u scrumProjectUseCase) AddNew(newData model.ScrumProject) (returnedNewData
 	*/
 
 	newAddedData, err := u.scrumProjectRepo.Insert(newData)
+	if err != nil {
+		return nil, err
+	}
+
+	//add new default board
+	projectBoards := []model.ScrumKanban{
+		{
+			ScrumProjectID: newAddedData.ID,
+			BoardName:      "To Do",
+		},
+		{
+			ScrumProjectID: newAddedData.ID,
+			BoardName:      "In Progress",
+		},
+		{
+			ScrumProjectID: newAddedData.ID,
+			BoardName:      "Done",
+		},
+	}
+
+	for _, kanban := range projectBoards {
+		_, err = u.scrumProjectRepo.InsertNewBoard(kanban)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return newAddedData, err
 }
 

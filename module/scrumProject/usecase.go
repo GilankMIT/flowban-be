@@ -14,6 +14,8 @@ type ScrumProjectUseCase interface {
 
 	GetByUserID(userID int) (data *[]model.ScrumProject, err error)
 
+	GetProjectBoards(projectID int) (data *[]model.ScrumKanban, err error)
+
 	//AddNew add new data of ScrumProject to repo
 	AddNew(newData model.ScrumProject) (returnedNewData *model.ScrumProject, err error)
 
@@ -22,6 +24,12 @@ type ScrumProjectUseCase interface {
 	AddNewIssue(issueData scrumProjectDTO.ReqCreateNewIssue) (*model.SprintIssue, error)
 
 	GetActiveIssueByProjectID(projectID int) (*[]model.SprintIssue, error)
+
+	MoveIssue(issueId int, boardID int) (*model.SprintIssue, error)
+
+	MoveIssueFromBacklog(issueID int) (*model.SprintIssue, error)
+
+	MoveIssueToBacklog(issueID int) (*model.SprintIssue, error)
 
 	//Update modify existing ScrumProject from repo
 	Update(updatedDate model.ScrumProject) (updatedData *model.ScrumProject, err error)

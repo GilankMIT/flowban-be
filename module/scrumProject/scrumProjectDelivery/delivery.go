@@ -31,11 +31,38 @@ func NewHTTPDelivery(r *gin.Engine, scrumProjectUC scrumProject.ScrumProjectUseC
 		authorizedUser.POST("create-sprint", handler.createSprint)
 		authorizedUser.POST("create-issue", handler.createIssue)
 		authorizedUser.POST("create-board", handler.createBoard)
+		authorizedUser.POST("move-issue-from-backlog", handler.moveIssueFromBacklog)
+		authorizedUser.POST("move-issue-to-backlog", handler.moveIssueToBacklog)
 		authorizedUser.POST("move-issue", handler.moveIssue)
 
 		authorizedUser.DELETE("delete-issue", handler.deleteIssue)
 
 	}
+}
+
+func (handler *httpDelivery) moveIssue(c *gin.Context) {
+	var request scrumProjectDTO.ReqMoveIssue
+	errBind := c.ShouldBind(&request)
+	if errBind != nil {
+		validations := requestvalidationerror.GetvalidationError(errBind)
+
+		if len(validations) > 0 {
+			jsonHttpResponse.NewFailedBadRequestResponse(c, validations)
+			return
+		}
+
+		jsonHttpResponse.NewFailedBadRequestResponse(c, errBind.Error())
+		return
+	}
+
+	issue, err := handler.scrumProjectUC.MoveIssue(request.IssueID, request.BoardID)
+	if err != nil {
+		jsonHttpResponse.NewFailedInternalServerResponse(c, err.Error())
+		return
+	}
+
+	jsonHttpResponse.NewSuccessfulOKResponse(c, issue)
+	return
 }
 
 func (handler *httpDelivery) getProjectByID(c *gin.Context) {
@@ -133,7 +160,20 @@ func (handler *httpDelivery) getActiveIssuesByProjectID(c *gin.Context) {
 }
 
 func (handler *httpDelivery) getBoardByProjectID(c *gin.Context) {
+	projectIDParam := c.Param("project_id")
+	projectID, err := strconv.Atoi(projectIDParam)
+	if err != nil {
+		jsonHttpResponse.NewFailedInternalServerResponse(c, err.Error())
+	}
 
+	boards, err := handler.scrumProjectUC.GetProjectBoards(projectID)
+	if err != nil {
+		jsonHttpResponse.NewFailedInternalServerResponse(c, err.Error())
+		return
+	}
+
+	jsonHttpResponse.NewSuccessfulOKResponse(c, boards)
+	return
 }
 
 func (handler *httpDelivery) getIssueDetail(c *gin.Context) {
@@ -194,8 +234,54 @@ func (handler *httpDelivery) createBoard(c *gin.Context) {
 
 }
 
-func (handler *httpDelivery) moveIssue(c *gin.Context) {
+func (handler *httpDelivery) moveIssueFromBacklog(c *gin.Context) {
+	var request scrumProjectDTO.ReqMoveIssueInBacklog
+	errBind := c.ShouldBind(&request)
+	if errBind != nil {
+		validations := requestvalidationerror.GetvalidationError(errBind)
 
+		if len(validations) > 0 {
+			jsonHttpResponse.NewFailedBadRequestResponse(c, validations)
+			return
+		}
+
+		jsonHttpResponse.NewFailedBadRequestResponse(c, errBind.Error())
+		return
+	}
+
+	savedIssue, err := handler.scrumProjectUC.MoveIssueFromBacklog(request.IssueID)
+	if err != nil {
+		jsonHttpResponse.NewFailedInternalServerResponse(c, err.Error())
+		return
+	}
+
+	jsonHttpResponse.NewSuccessfulOKResponse(c, savedIssue)
+	return
+}
+
+func (handler *httpDelivery) moveIssueToBacklog(c *gin.Context) {
+	var request scrumProjectDTO.ReqMoveIssueInBacklog
+	errBind := c.ShouldBind(&request)
+	if errBind != nil {
+		validations := requestvalidationerror.GetvalidationError(errBind)
+
+		if len(validations) > 0 {
+			jsonHttpResponse.NewFailedBadRequestResponse(c, validations)
+			return
+		}
+
+		jsonHttpResponse.NewFailedBadRequestResponse(c, errBind.Error())
+		return
+	}
+
+	savedIssue, err := handler.scrumProjectUC.MoveIssueToBacklog(request.IssueID)
+	if err != nil {
+		jsonHttpResponse.NewFailedInternalServerResponse(c, err.Error())
+		return
+	}
+
+	jsonHttpResponse.NewSuccessfulOKResponse(c, savedIssue)
+	return
 }
 
 func (handler *httpDelivery) deleteIssue(c *gin.Context) {

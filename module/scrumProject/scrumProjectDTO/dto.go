@@ -21,3 +21,12 @@ type ReqCreateNewIssue struct {
 	ProjectID  int    `json:"project_id"`
 	StoryPoint int    `json:"story_point"`
 }
+
+type ReqMoveIssueInBacklog struct {
+	IssueID int `json:"issue_id" binding:"required"`
+}
+
+type ReqMoveIssue struct {
+	IssueID int `json:"issue_id"`
+	BoardID int `json:"board_id"`
+}

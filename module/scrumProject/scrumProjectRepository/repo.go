@@ -15,6 +15,34 @@ func NewScrumProjectRepository(conn *gorm.DB) scrumProject.ScrumProjectRepositor
 	return &scrumProjectRepo{conn: conn}
 }
 
+func (u scrumProjectRepo) UpdateIssue(data model.SprintIssue) (*model.SprintIssue, error) {
+	db := u.conn.Save(&data)
+	return &data, db.Error
+}
+
+func (u scrumProjectRepo) GetIssueByID(id int) (*model.SprintIssue, error) {
+	var issue model.SprintIssue
+	db := u.conn.First(&issue, "id=?", id)
+	return &issue, db.Error
+}
+
+func (u scrumProjectRepo) GetBoardByProjectIDAndBoardName(id int, name string) (*model.ScrumKanban, error) {
+	var board model.ScrumKanban
+	db := u.conn.First(&board, "scrum_project_id=? and board_name=?", id, name)
+	return &board, db.Error
+}
+
+func (u scrumProjectRepo) GetBoardByProjectID(projectID int) (*[]model.ScrumKanban, error) {
+	var board []model.ScrumKanban
+	db := u.conn.Find(&board, "scrum_project_id=?", projectID)
+	return &board, db.Error
+}
+
+func (u scrumProjectRepo) InsertNewBoard(data model.ScrumKanban) (*model.ScrumKanban, error) {
+	db := u.conn.Create(&data)
+	return &data, db.Error
+}
+
 func (u scrumProjectRepo) InsertSprint(data model.SprintSession) (*model.SprintSession, error) {
 	db := u.conn.Create(&data)
 	return &data, db.Error
